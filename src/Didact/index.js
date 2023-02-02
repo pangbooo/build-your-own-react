@@ -1,3 +1,22 @@
+let nextUnitOfWork = null;
+
+// 1. perform work
+// 2. return next unit of work
+function performUnitOfWork () {
+    // TODO
+}
+
+function workLoop (deadline) {
+    let shouldYield = false;
+    while(nextUnitOfWork && !shouldYield) {
+        nextUnitOfWork = performUnitOfWork(nextUnitOfWork);
+        shouldYield = deadline.timeRemaining() < 1
+    }
+    requestIdleCallback(workLoop)
+}
+
+requestIdleCallback(workLoop)
+
 function createTextElement (text) {
     return {
         type: 'TEXT_ELEMENT',
