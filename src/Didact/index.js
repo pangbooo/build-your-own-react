@@ -37,20 +37,22 @@ function createDom(fiber) {
 
 // set next unit of work
 function render (element, container) {
-    nextUnitOfWork = {
+    // wipRoot => work in progress root that keep the track of fiber tree root.
+    wipRoot = {
         dom: container,
         props: {
             children: [element],
         }
     }
+    nextUnitOfWork = wipRoot;
 }
 
+let wipRoot = null;
 let nextUnitOfWork = null;
 
 // 1. perform work
 // 2. return next unit of work
 function performUnitOfWork (fiber) {
-    console.log('fiber......', fiber)
     // 1. TODO add dom node
     if (!fiber.dom) {
         fiber.dom = createDom(fiber);
@@ -99,11 +101,22 @@ function performUnitOfWork (fiber) {
     }
 }
 
+// when all work finished, commit the root.
+function commitRoot() {
+    // TODO add node to dom.
+
+}
+
 function workLoop (deadline) {
     let shouldYield = false;
+    // console.log('nextUnitOfWork: ', JSON.stringify(nextUnitOfWork, null,  2));
     while(nextUnitOfWork && !shouldYield) {
         nextUnitOfWork = performUnitOfWork(nextUnitOfWork);
         shouldYield = deadline.timeRemaining() < 1
+    }
+
+    if (!nextUnitOfWork && wipRoot) {
+        commitRoot();
     }
     requestIdleCallback(workLoop)
 }
