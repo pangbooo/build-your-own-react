@@ -11,17 +11,27 @@ import Didact from './Didact';
 //   </div>
 // );
 
-const element = Didact.createElement(
-  'div',
-  {
-    id: 'foo',
-  },
-  'foo',
-  Didact.createElement('a', null, 'bar'),
-  Didact.createElement('b'),
-)
+// const element = Didact.createElement(
+//   'div',
+//   {
+//     id: 'foo',
+//   },
+//   'foo',
+//   Didact.createElement('a', null, 'bar'),
+//   Didact.createElement('b'),
+// )
 
-console.log('element----', element);
+function App(props) {
+  return Didact.createElement(
+    "h1",
+    null,
+    "Hi ",
+    props.name
+  )
+}
+
+const element = <App name='abc'/>
+
 const container = document.getElementById("root")
 Didact.render(element, container)
 

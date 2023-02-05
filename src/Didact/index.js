@@ -104,9 +104,12 @@ function reconcileChildren (wipFiber, elements) {
     }
 }
 
-// 1. perform work
-// 2. return next unit of work
-function performUnitOfWork (fiber) {
+function updateFunctionComponent (fiber) {
+    const children = [fiber.type(fiber.props)];
+    reconcileChildren(fiber, children);
+}
+
+function updateHostComponent (fiber) {
     // 1. TODO add dom node
     if (!fiber.dom) {
         fiber.dom = createDom(fiber);
@@ -115,7 +118,19 @@ function performUnitOfWork (fiber) {
     // 2. TODO create new fibers
     const elements = fiber.props.children;
     reconcileChildren(fiber, elements);
-    
+}
+
+// 1. perform work
+// 2. return next unit of work
+function performUnitOfWork (fiber) {
+    const isFunctionComponent = fiber.type instanceof Function;
+
+    if (isFunctionComponent) {
+        updateFunctionComponent(fiber);
+    } else {
+        updateHostComponent(fiber);
+    }
+
     // 3. TODO return next unit of work
     if (fiber.child) {
         return fiber.child
@@ -176,16 +191,31 @@ function updateDom (dom, prevProps, nextProps) {
         })
 }
 
+function commitDeletion (fiber, domParent) {
+    if (fiber.dom) {
+        domParent.removeChild(fiber.dom);
+    } else {
+        commitDeletion(fiber.child, domParent);
+    }
+}
+
 function commitWork(fiber) {
     if (!fiber) {
         return;
     }
-    const domParent = fiber.parent.dom;
+
+    // to find the parent of a DOM node 
+    // we’ll need to go up the fiber tree until we find a fiber with a DOM node.
+    let domParentFiber = fiber.parent;
+    while (!domParentFiber.dom) {
+        domParentFiber = domParentFiber.parent;
+    }
+    const domParent = domParentFiber.dom;
 
     if (fiber.effectTag === 'PLACEMENT' && fiber.dom !== null) {
         domParent.appendChild(fiber.dom);
     } else if (fiber.effectTag === 'DELETION') {
-        domParent.removeChild(fiber.dom);
+        commitDeletion(fiber, domParent);
     } else if (fiber.effectTag === 'UPDATE' && fiber.dom !== null) {
         updateDom(
             fiber.dom,
