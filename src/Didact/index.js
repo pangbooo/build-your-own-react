@@ -104,7 +104,49 @@ function reconcileChildren (wipFiber, elements) {
     }
 }
 
+let wipFiber = null;
+let hookIndex = null;
+function useState(initial) {
+    const oldHook = wipFiber.alternate 
+        && wipFiber.alternate.hooks
+        && wipFiber.alternate.hooks[hookIndex];
+    
+    const hook = {
+        state: oldHook ? oldHook.state : initial,
+        queue: [],
+    };
+    
+    // We do it the next time we are rendering the component, 
+    // we get all the actions from the old hook queue, 
+    // and then apply them one by one to the new hook state, 
+    // so when we return the state it’s updated.
+    const actions = oldHook ? oldHook.queue : [];
+
+    actions.forEach(action => {
+        hook.state = action(hook.state);
+    })
+
+    const setState = action => {
+        hook.queue.push(action);
+        wipRoot = {
+            dom: currentRoot.dom,
+            props: currentRoot.props,
+            alternate: currentRoot,
+        }
+        nextUnitOfWork = wipRoot;
+        deletions = [];
+    }
+
+    wipFiber.hooks.push(hook);
+    hookIndex++;
+    return [hook.state, setState];
+}
+
 function updateFunctionComponent (fiber) {
+    wipFiber = fiber;
+    wipFiber.hooks = [];
+    hookIndex = 0;
+
     const children = [fiber.type(fiber.props)];
     reconcileChildren(fiber, children);
 }
@@ -255,6 +297,7 @@ requestIdleCallback(workLoop)
 const Didact = {
     createElement,
     render,
+    useState,
 }
 
 export default Didact;
